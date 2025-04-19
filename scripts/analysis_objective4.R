@@ -196,7 +196,7 @@ taup <- temperature_mdl_emm %>%
                        limits = c(-1.5, 1.5), 
                        expand = c(0,0)) +
     ylab(
-        latex2exp::TeX(r"($\hat{\tau}_{tcs - veh}$)")
+        latex2exp::TeX(r"($\hat{\tau}_{veh - tcs}$)")
     ) +
     xlab("")
 taup
@@ -225,7 +225,7 @@ alphap <- lrate_mdl_emm %>%
                        limits = c(-1.5, 1.5), 
                        expand = c(0,0)) +
     ylab(
-        latex2exp::TeX(r"($\hat{\alpha}_{tcs - veh}$)")
+        latex2exp::TeX(r"($\hat{\alpha}_{veh - tcs}$)")
     ) +
     xlab("")
 alphap

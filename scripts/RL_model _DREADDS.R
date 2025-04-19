@@ -46,7 +46,8 @@ soft_max <- function(Q_vector, tau){
 likelihood_function <- function(
         theta, # theta[1] learning rate, theta[2] temperature
         actions,
-        rewards
+        rewards,
+        ID
         ){
     # parameters
     alpha <- theta[1]
@@ -62,8 +63,27 @@ likelihood_function <- function(
        R = round(runif(1, min=0, max=1), 1) 
        Q <- list(c(L, R))
     }
+    # warm estimates from baseline preference
     else{
-        Q <- c(0.5, 0.5)
+        if (ID == 809){
+            Q <- c(0.215, 0.785)
+        }
+        if (ID == 810){
+            #Q <- c(0.721, 0.279)
+            Q <- c(0.279, 0.721)
+        }
+        if (ID == 811){
+            Q <- c(0.0603, 0.940)
+        }
+        if (ID == 812){
+            Q <- c(0.375, 0.625)
+        }
+        if (ID == 813){
+            Q <- c(0.0513, 0.949)
+        }
+        if (ID == 814){
+            Q <- c(0.0625, 0.938)
+        }
     }
     
     # do simulations
@@ -80,7 +100,12 @@ likelihood_function <- function(
         # update Q values
         Q[a] <- Q[a] + (alpha * (r - Q[a]))
     }
-    return(-sum(logp_actions_t[-1]))
+    mu <- 1e-2
+    penalization_tau <- -mu * (log(tau - 0.001) + log(5 - tau))
+    penalization_alpha <- -mu * (log(alpha - 0.001) + log(1 - alpha))
+    penalization_sum <- penalization_alpha + penalization_tau
+    total_penalization <- if_else(penalization_sum==Inf||is.na(penalization_sum), 1e20, penalization_sum)
+    return(-sum(logp_actions_t[-1]) + total_penalization)
 }
 
 # example data generation ----
@@ -234,8 +259,8 @@ ed_choice <- ed %>%
         rewards = max(new_reward, na.rm = TRUE)
     ) %>% 
     ungroup() %>% 
-    select(ID, actions, rewards, treatment) %>% 
-    group_by(ID, treatment) %>% 
+    select(ID, actions, rewards, treatment, n_sesion) %>% 
+    group_by(ID, treatment, n_sesion) %>% 
     drop_na() %>% 
     group_split()
 write_csv(x = ed_choice %>% bind_rows(), "../datasets/individual_choice_data_DREADDS.csv")
@@ -260,7 +285,8 @@ model_fits <- 1:1000 %>%
             lower = lower_bounds,
             upper = upper_bounds,
             actions = dat_sim$actions,
-            rewards = dat_sim$rewards
+            rewards = dat_sim$rewards,
+            ID = dat_sim$ID[1]
         )
         optim_res <- param_optim$par
         return(tibble(
@@ -269,7 +295,8 @@ model_fits <- 1:1000 %>%
             likelihood = param_optim$value,
             iteration = iteration,
             ID = dat_sim$ID[1],
-            treatment = dat_sim$treatment[1]
+            treatment = dat_sim$treatment[1],
+            session = dat_sim$n_sesion[1]
         ))
         })
         return(it)
