@@ -4,3 +4,4 @@ datasets/individual_choice_data_DREADDS.csv
 *.csv
 datasets/lickometer_complete_DREADDS.csv
 datasets/individual_choice_data_DREADDS.csv
+/datasets
