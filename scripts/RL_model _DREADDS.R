@@ -69,7 +69,6 @@ likelihood_function <- function(
             Q <- c(0.215, 0.785)
         }
         if (ID == 810){
-            #Q <- c(0.721, 0.279)
             Q <- c(0.279, 0.721)
         }
         if (ID == 811){
