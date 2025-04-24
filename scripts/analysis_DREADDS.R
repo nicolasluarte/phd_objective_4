@@ -192,8 +192,8 @@ H_mdl_emtrend
 
 # p::tau ----
 
+# omitir la estrellita pk ahora agregue los dos grupos en un mismo plot
 taup <- temperature_mdl_plt %>% 
-    filter(vir == "trt") %>% 
     mutate(entropy_level = factor(as.factor(entropy_level),
                                   levels = c("low_entropy", "mid_entropy", "high_entropy"))) %>% 
     ggplot(aes(
@@ -203,7 +203,7 @@ taup <- temperature_mdl_plt %>%
                     size = 1.25) +
     geom_hline(yintercept = 0.5, linetype = "dashed") +
     geom_point(aes(entropy_level, temperature_plt),
-            data = diff_rl_mdl_data %>% filter(vir == "trt"),
+            data = diff_rl_mdl_data,
             fill = "orange"
     ) +
     annotate("text", label="*", x=3, y=0.85, size=12) +
@@ -219,12 +219,12 @@ taup <- temperature_mdl_plt %>%
     ylab(
         latex2exp::TeX(r"($\hat{\tau}_{veh - cno}$)")
     ) +
-    xlab("")
+    xlab("") +
+    facet_wrap(~vir)
 taup
 
 # p::alpha ----
 alphap <- lrate_mdl_plt %>% 
-    filter(vir == "trt") %>% 
     mutate(entropy_level = factor(as.factor(entropy_level),
                                   levels = c("low_entropy", "mid_entropy", "high_entropy"))) %>% 
     ggplot(aes(

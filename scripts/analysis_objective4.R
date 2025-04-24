@@ -78,13 +78,13 @@ rl_mdl_data <- optimal_mdl_fit %>%
 # could not compute alpha for 574
 diff_rl_mdl_data <- rl_mdl_data %>% 
     ungroup() %>% 
-    group_by(ID) %>% 
+    group_by(ID, entropy_level) %>% 
     mutate(
         temperature = (temperature - temperature[drug=="tcs"]),
         learning_rate = (learning_rate - learning_rate[drug=="tcs"])
     ) %>% 
     filter(drug=="veh")
-    diff_rl_mdl_data
+diff_rl_mdl_data
 
 temperature_mdl <- lme4::lmer(
     data = diff_rl_mdl_data,
@@ -145,29 +145,33 @@ tau_alpha_emtrend
 # entropy explains changes in exploration
 # and this is modulated by orexin
 
-H_mdl <- lme4::lmer(
-    data = diff_rl_mdl_data %>% 
-        mutate(entropy_level = as.numeric(as.factor(entropy_level))),
-    temperature ~ H * learning_rate * entropy_level + (1 | ID),
-    control = lme4::lmerControl(
-        optimizer = "bobyqa",
-        optCtrl = list(maxfun = 2e5)
-    )
+H_mdl <- glmmTMB::glmmTMB(
+    data = rl_mdl_data %>% filter(entropy_level != "low_entropy"),
+    temperature ~ drug * H+ entropy_level + (H + drug || ID),
+    family = glmmTMB::beta_family(link = "logit")
 )
 summary(H_mdl)
 
 H_mdl_emm <- emmeans::emmeans(
     H_mdl,
-    ~ H | entropy_level * learning_rate,
+    pairwise~ H | drug | entropy_level,
+    type = "response",
     at = list(H = seq(0, 1, 0.1))
-) %>% broom.mixed::tidy(conf.int = TRUE)
+)$contrasts %>% broom.mixed::tidy(conf.int = TRUE)
 H_mdl_emm
+
+H_mdl_emm %>%
+    ggplot(aes(H, response)) +
+    geom_line(aes(group = drug, color = drug)) +
+    facet_wrap(~entropy_level)
 
 H_mdl_emtrend <- emmeans::emtrends(
     H_mdl,
-    ~ learning_rate * entropy_level,
-    var = "H"
-) %>% emmeans::test()
+    pairwise ~ drug | H,
+    var = "H",
+    type = "response",
+    at = list(H = seq(0, 1, 0.25))
+)
 H_mdl_emtrend
 
 # p::tau ----
@@ -260,7 +264,6 @@ tau_H <- H_mdl_emm %>%
     geom_ribbon(aes(ymin=conf.low, ymax=conf.high),
                 alpha = 0.05) +
     geom_line() +
-    geom_vline(xintercept = c(0.7, 1), linetype="dashed") +
     scale_x_continuous(breaks = seq(0, 1, 0.25)) +
     theme_uncertainty + 
     scale_y_continuous(breaks = seq(-1.5, 1.5, 0.5), 

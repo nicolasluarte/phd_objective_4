@@ -46,7 +46,8 @@ soft_max <- function(Q_vector, tau){
 likelihood_function <- function(
         theta, # theta[1] learning rate, theta[2] temperature
         actions,
-        rewards
+        rewards,
+        ID
         ){
     # parameters
     alpha <- theta[1]
@@ -62,8 +63,33 @@ likelihood_function <- function(
        R = round(runif(1, min=0, max=1), 1) 
        Q <- list(c(L, R))
     }
+    # warm estimates from baseline preference
     else{
-        Q <- c(0.5, 0.5)
+        if (ID == 574){
+            Q <- c(0.673, 0.327)
+        }
+        if (ID == 575){
+            Q <- c(0.910, 0.0897)
+        }
+        if (ID == 576){
+            Q <- c(0.785, 0.215)
+        }
+        if (ID == 577){
+            Q <- c(0.344, 0.656)
+        }
+        if (ID == 578){
+            Q <- c(0.843, 0.157)
+        }
+        if (ID == 579){
+            Q <- c(0.442, 0.558)
+        }
+        if (ID == 580){
+            #Q <- c(0.647, 0.353)
+            Q <- c(0.353, 0.647)
+        }
+        if (ID == 581){
+            Q <- c(0.591, 0.481)
+        }
     }
     
     # do simulations
@@ -215,8 +241,8 @@ ed_choice <- ed %>%
     filter(actividad != -1, treatment != "baseline") %>% 
     group_by(ID, treatment, sensor) %>% 
     mutate(
-        new_event = if_else(evento!=lag(evento) & evento > 0, 1, 0),
-        new_reward = if_else(exito!=lag(exito), 1, 0)
+        new_event = replace_na(if_else(evento!=lag(evento) & evento > 0, 1, 0),1),
+        new_reward = replace_na(if_else(exito!=lag(exito), 1, 0), 1)
     ) %>%
     ungroup() %>% 
     filter(new_event==1) %>% 
@@ -228,7 +254,7 @@ ed_choice <- ed %>%
     ungroup() %>% 
     select(ID, actions, rewards, treatment) %>% 
     group_by(ID, treatment) %>% 
-    drop_na() %>% 
+    drop_na() %>%
     group_split()
 write_csv(x = ed_choice %>% bind_rows(), "../datasets/individual_choice_data.csv")
 
@@ -252,7 +278,8 @@ model_fits <- 1:1000 %>%
             lower = lower_bounds,
             upper = upper_bounds,
             actions = dat_sim$actions,
-            rewards = dat_sim$rewards
+            rewards = dat_sim$rewards,
+            ID = dat_sim$ID[1]
         )
         optim_res <- param_optim$par
         return(tibble(
